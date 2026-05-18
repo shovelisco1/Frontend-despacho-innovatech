@@ -3,7 +3,7 @@ name: CI/CD Frontend
 on:
   push:
     branches:
-      - deploy 
+      - deploy
 
 jobs:
   build-and-deploy:
@@ -33,6 +33,25 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY_FRONTEND }}
           script: |
             cd /home/ubuntu
+
+            # Escribir el archivo docker-compose directamente en el servidor
+            cat << 'EOF' > docker-compose.yml
+            version: '3.8'
+            services:
+              frontend:
+                image: shovelisco/innovatech-frontend:latest
+                container_name: web-frontend
+                ports:
+                  - "80:8080"
+                networks:
+                  - innovatech_front_net
+
+            networks:
+              innovatech_front_net:
+                name: network_frontend_innovatech
+            EOF
+
+            # Detener contenedores anteriores (si existen), bajar la nueva imagen y encender
+            sudo docker-compose down || true
             sudo docker pull shovelisco/innovatech-frontend:latest
-            sudo docker-compose down
             sudo docker-compose up -d
